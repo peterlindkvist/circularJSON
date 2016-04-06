@@ -29,15 +29,17 @@ circularJSON.recursiveEach = function(obj, funct, maxdepth, stack){
 
   var ret = funct(obj, stack);
 
-  //if(!(typeof ret === 'object' && typeof obj === 'string')){ //check if ret is in stack. 
-    if(maxdepth > 0){
-      ret = circularJSON.AOeach(ret, function(prop, index){
-        return circularJSON.recursiveEach(prop, funct, maxdepth - 1, stack);
-      });
-    }
-  //}
+  if(!circularJSON.isPrimitive(ret) && maxdepth > 0){
+    ret = circularJSON.AOeach(ret, function(prop, index){
+      return circularJSON.recursiveEach(prop, funct, maxdepth - 1, stack);
+    });
+  }
 
   return ret;
+}
+
+circularJSON.isPrimitive = function(obj){
+  return typeof obj === 'string' || typeof obj === 'number'
 }
 
 circularJSON._flatten = function(prop, stack){
@@ -58,10 +60,7 @@ circularJSON._flatten = function(prop, stack){
 circularJSON._unflatten = function(prop, stack){
   if(typeof prop === 'string' && prop.indexOf(circularJSON._key) === 0){
     var prop = prop.slice(circularJSON._key.length);
-    var match = prop.match(circularJSON._rxp);
-
-    console.log('stack.', prop, stack);
-    
+    var match = prop.match(circularJSON._rxp);    
     prop = stack[0][match[1]][match[3]]  
   }
   return prop;
@@ -96,12 +95,14 @@ var simple = {
 }
 simple.b.ba.baa = simple.a.aa;
 simple.a.aa.aac = simple.b.ba;
-//simple.c[0].a = simple.a.aa;
+simple.c[0].a = simple.a.aa;
 simple.a.aa.aad = simple.c[0];
 
+console.log("before test:", simple.c[0].a === simple.a.aa);
 var json = circularJSON.stringify(simple, null, 2);
 console.log('json2', json);
 var data = circularJSON.parse(json);
 console.log('data', data);
+console.log("after test:", data.c[0].a === data.a.aa);
 
 
